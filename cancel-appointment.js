@@ -92,8 +92,15 @@ app.post('/cancel', async (req, res) => {
 
       const allAppointments = appointmentsRes.data.data || appointmentsRes.data;
       const now = new Date();
+      const startOfToday = new Date(now);
+      startOfToday.setHours(0, 0, 0, 0);
+
+      // Include same-day appointments (even if past start time) since Meevo still has them
       const upcomingAppointments = allAppointments
-        .filter(apt => new Date(apt.startTime) > now && !apt.isCancelled)
+        .filter(apt => {
+          const aptTime = new Date(apt.startTime);
+          return (aptTime > now || aptTime >= startOfToday) && !apt.isCancelled;
+        })
         .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
       if (upcomingAppointments.length === 0) {
